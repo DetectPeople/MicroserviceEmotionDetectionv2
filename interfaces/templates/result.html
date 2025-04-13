@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/select_video.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <title>Emotion Detection Result</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            margin: 0;
+            color: white;
+        }
+        .container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 90%;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        .video-container {
+            margin: 20px 0;
+        }
+        video {
+            width: 100%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .link-buttons {
+            margin-top: 20px;
+        }
+        .link-buttons a {
+            color: white;
+            text-decoration: none;
+            background-color: #0073e6;
+            padding: 8px 16px;
+            border-radius: 5px;
+            margin: 5px;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+        .link-buttons a:hover {
+            background-color: #005bb5;
+        }
+    </style>
+    <script>
+        // Definir la función downloadEmotionsExcel
+        function downloadEmotionsExcel() {
+            // Obtener el videoId del atributo de datos
+            const videoId = document.getElementById('download-button').dataset.videoId;
+            // Verificar si el videoId es válido
+            if (videoId) {
+                // Construir la URL de descarga con el videoId
+                const downloadUrl = `/download_emotions_excel/${videoId}`;
+                // Redirigir al usuario a la URL de descarga
+                window.location.href = downloadUrl;
+            } else {
+                console.error("Video ID is undefined or invalid.");
+            }
+        }
+    </script>
+</head>
+<body>
+    {% include 'sidebar.html' %}
+    <div class="container">
+        <h1>Emotion Detection Result</h1>
+
+        <div class="video-container">
+            <p>Processed Video:</p>
+            <video controls>
+                <source src="{{ url_for('emotion_api.get_video', video_filename=video_filename) }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div class="link-buttons">
+            <a href="{{ url_for('emotion_api.select_video') }}">Select Another Video</a>
+            <a href="http://127.0.0.1:5000/">Upload Video</a>
+            <a href="http://127.0.0.1:5003/">Body Tracking & Heatmap</a>
+            <!-- Botón de descarga actualizado -->
+            <a href="#" id="download-button" data-video-id="{{ video_id }}" onclick="downloadEmotionsExcel()">Download Emotions</a>
+            <a href="{{ url_for('emotion_api.view_charts', video_id=video_id) }}" class="btn btn-success mt-4">📈 Ver Gráficas</a>
+
+        </div>
+    </div>
+</body>
+</html>

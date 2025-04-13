@@ -1,0 +1,141 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #1a73e8, #4285f4);
+    color: white;
+    min-height: 100vh;
+}
+
+.content {
+    margin-left: 250px;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+
+body.collapsed .content {
+    margin-left: 60px;
+}
+
+.select-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    padding: 40px 30px;
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+    color: white;
+}
+
+.icon-circle {
+    font-size: 60px;
+    color: #ffd600;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+select {
+    width: 100%;
+    max-width: 400px;
+    padding: 14px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: none;
+    margin: 20px auto;
+    display: block;
+    background-color: #ffffff;
+    color: #333;
+}
+
+.btn-process {
+    background-color: #28a745;
+    color: white;
+    padding: 14px 30px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-process:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+}
+
+.link-buttons {
+    margin-top: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+}
+
+.link-buttons a {
+    display: inline-flex;
+    align-items: center;
+    background-color: #0073e6;
+    color: white;
+    padding: 10px 22px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    gap: 8px;
+    transition: background 0.3s ease, transform 0.2s;
+}
+
+.link-buttons a:hover {
+    background-color: #005bb5;
+    transform: translateY(-2px);
+}
+
+/* Animación */
+.animate-pop {
+    animation: popIn 0.5s ease-out;
+}
+
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    .content {
+        margin-left: 0;
+        padding: 20px;
+    }
+
+    .select-container {
+        padding: 20px;
+    }
+
+    .icon-circle {
+        font-size: 48px;
+    }
+
+    .btn-process, .link-buttons a {
+        width: 100%;
+        justify-content: center;
+    }
+}
+

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráficos de Emociones</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Gráficos de Emociones por Persona y General</h1>
+
+    <!-- Gráfico General de Emociones -->
+    <div class="card shadow mb-5">
+        <div class="card-body">
+            <h3 class="card-title text-center">Gráfico General de Emociones</h3>
+            <canvas id="generalEmotionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Gráficos Individuales por Persona -->
+    <div class="row">
+        {% for person, emotions in emotions_by_person.items() %}
+        <div class="col-md-6 mb-4">
+            <div class="card chart-card shadow">
+                <div class="card-body">
+                    <h5 class="card-title text-center">{{ person }} - Emociones</h5>
+                    <canvas id="emotionChart_{{ loop.index }}"></canvas>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mostrar métricas generales -->
+    <div class="card shadow mb-5">
+        <div class="card-body">
+            <h3 class="card-title text-center">Métricas Generales</h3>
+            <ul class="list-group">
+                <li class="list-group-item">Brillo Promedio: {{ metrics['Average Brightness'] }}</li>
+                <li class="list-group-item">Relación de Contraste: {{ metrics['Contrast Ratio'] }}</li>
+                <li class="list-group-item">Complejidad de Fondo: {{ metrics['Background Complexity'] }}</li>
+                <li class="list-group-item">Temperatura de Color: {{ metrics['Color Temperature'] }}</li>
+                <li class="list-group-item">Nitidez: {{ metrics['Sharpness'] }}</li>
+            </ul>
+        </div>
+    </div>
+
+        <!-- Info por persona -->
+    <div class="card shadow mb-5">
+        <div class="card-body">
+            <h3 class="card-title text-center">Personas Detectadas</h3>
+            <div class="row">
+                {% for person, info in person_info.items() %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ person }}</h5>
+                            <p><strong>Edad Estimada:</strong> {{ info.age_estimation or "Desconocida" }}</p>
+                            <p><strong>Género:</strong> {{ info.gender or "Desconocido" }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <!-- Promedio general de edad -->
+    {% if general_avg_age %}
+    <div class="card shadow mb-5">
+        <div class="card-body text-center">
+            <h4>🧠 Promedio Estimado de Edad General: <strong>{{ general_avg_age }} años</strong></h4>
+        </div>
+    </div>
+    {% endif %}
+
+        <!-- Gráfico de Distribución por Género -->
+    {% if gender_distribution %}
+    <div class="card shadow mb-5">
+        <div class="card-body">
+            <h3 class="card-title text-center">Distribución por Género</h3>
+            <canvas id="genderPieChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+    // Gráfico General
+    const generalEmotionCtx = document.getElementById('generalEmotionChart').getContext('2d');
+    const generalEmotionChart = new Chart(generalEmotionCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ emotion_data.keys()|list|tojson }},
+            datasets: [{
+                label: 'Emociones Generales',
+                data: {{ emotion_data.values()|list|tojson }},
+                backgroundColor: '#4D96FF',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: {
+                duration: 1200,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Frecuencias de Emociones Generales',
+                    font: { size: 18 }
+                },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: '#333',
+                    titleFont: { weight: 'bold' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#ccc' }
+                },
+                x: {
+                    ticks: { autoSkip: false }
+                }
+            }
+        }
+    });
+
+    // Gráficos Individuales por Persona
+    {% for person, emotions in emotions_by_person.items() %}
+    const emotionCtx{{ loop.index }} = document.getElementById('emotionChart_{{ loop.index }}').getContext('2d');
+    const emotionChart{{ loop.index }} = new Chart(emotionCtx{{ loop.index }}, {
+        type: 'bar',
+        data: {
+            labels: {{ emotions.keys()|list|tojson }},
+            datasets: [{
+                label: '{{ person }}',
+                data: {{ emotions.values()|list|tojson }},
+                backgroundColor: '#4D96FF',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: {
+                duration: 1200,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: '{{ person }} - Frecuencias de Emociones',
+                    font: { size: 18 }
+                },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: '#333',
+                    titleFont: { weight: 'bold' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#ccc' }
+                },
+                x: {
+                    ticks: { autoSkip: false }
+                }
+            }
+        }
+    });
+    {% endfor %}
+
+    // Gráficos de Edad por Persona
+
+    // Gráficos de Edad por Persona
+    {% for person, age in person_ages.items() %}
+    const ageCtx{{ loop.index0 }} = document.getElementById('ageChart_age_{{ loop.index0 }}').getContext('2d');
+    new Chart(ageCtx{{ loop.index0 }}, {
+        type: 'bar',
+        data: {
+            labels: ['Edad Estimada'],
+            datasets: [{
+                label: '{{ person }}',
+                data: [{{ age }}],
+                backgroundColor: '#FF6384',
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '{{ person }} - Edad Estimada',
+                    font: { size: 16 }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    {% endfor %}
+
+
+    // Gráfico de distribución por género
+    {% if gender_distribution %}
+    const genderCtx = document.getElementById('genderPieChart').getContext('2d');
+    new Chart(genderCtx, {
+        type: 'polarArea',
+        data: {
+            labels: {{ gender_distribution.keys()|list|tojson }},
+            datasets: [{
+                data: {{ gender_distribution.values()|list|tojson }},
+                backgroundColor: [
+                    '#36A2EB', // Azul para "Male"
+                    '#FF6384', // Rosa para "Female"
+                    '#FFCE56', // Amarillo para "Other" o "Unknown"
+                    '#4BC0C0',
+                    '#9966FF'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Distribución por Género',
+                    font: {
+                        size: 20
+                    }
+                },
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+
+    {% endif %}
+
+
+</script>
+
+</body>
+</html>

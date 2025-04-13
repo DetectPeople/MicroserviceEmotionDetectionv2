@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Processing Frames</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a73e8, #4285f4);
+            font-family: Arial, sans-serif;
+            color: white;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 90%;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.2em;
+        }
+    </style>
+    <script>
+        // Periodically check frame status by reloading the page every few seconds
+        setTimeout(function() {
+            window.location.reload();
+        }, 3000); // Reload every 3 seconds
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Processing Frames for Video</h1>
+        <p>Your video is being processed to extract frames for emotion detection. This may take a few moments.</p>
+        <p>Please wait...</p>
+    </div>
+</body>
+</html>

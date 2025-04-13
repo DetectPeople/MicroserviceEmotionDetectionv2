@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Video for Emotion Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/select_video.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+
+    <div class="content">
+        <div class="select-container animate-pop">
+            <div class="icon-circle">
+                <i class="fas fa-theater-masks"></i>
+            </div>
+            <h1>Select Video for Emotion Detection</h1>
+            <form action="/process" method="post">
+                <p><strong>Choose a video:</strong></p>
+                <select name="video_id" id="video_id">
+                    {% for video in videos %}
+                        <option value="{{ video.id }}">{{ video.filename }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn-process"><i class="fas fa-play"></i> Process Video</button>
+            </form>
+
+            <div class="link-buttons">
+                <a href="http://127.0.0.1:5000/"><i class="fas fa-upload"></i> Upload Video</a>
+                <a href="http://127.0.0.1:5003/"><i class="fas fa-users"></i> Body Tracking & Heatmap</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById("sidebar").classList.toggle("collapsed");
+            document.body.classList.toggle("collapsed");
+        }
+    </script>
+</body>
+</html>

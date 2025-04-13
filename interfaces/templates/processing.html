@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Procesando Video</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/processing.css') }}">
+    <script src="https://kit.fontawesome.com/a2e0e6e6d0.js" crossorigin="anonymous"></script>
+    <meta http-equiv="refresh" content="2;URL={{ url_for('emotion_api.start_processing', video_id=video_id) }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Processing Video...</h1>
+        <p class="message">Your video is being processed for emotion detection. Please wait.</p>
+
+        <div class="icon-track">
+            <div id="icon" class="walker"><i class="fas fa-person-walking"></i></div>
+        </div>
+
+        <div class="progress-track">
+            <div class="progress-bar infinite-animation"></div>
+        </div>
+    </div>
+</body>
+
+</html>
