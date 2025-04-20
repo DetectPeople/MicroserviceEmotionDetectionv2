@@ -1,0 +1,102 @@
+{# partials/notes_section.html #}
+{% set report_id = emotion_report_id if emotion_report_id is defined else None %}
+{% if report_id %}
+
+  <div id="notes-section">
+    <!-- LISTA DE NOTAS -->
+    <div class="card-body">
+      <ul id="note-list" class="list-group list-group-flush mb-3"></ul>
+    </div>
+
+    <!-- FOOTER CON BOTÓN -->
+    <div class="card-footer bg-white">
+      <button id="add-note-btn" class="btn btn-primary w-100">
+        <i class="fas fa-plus"></i> Agregar nota
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal PARA CREAR/EDITAR -->
+  <div class="modal fade" id="noteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nota</h5>
+        </div>
+        <div class="modal-body">
+          <textarea id="note-text" class="form-control" rows="4"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button id="save-note-btn" class="btn btn-success">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- bootstrap.bundle para el modal -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+  (function(){
+    const reportId = {{ report_id }};
+    let editingId = null;
+    const modal = new bootstrap.Modal(document.getElementById('noteModal'));
+
+    async function api(url, method='GET', body=null){
+      const res = await fetch(url, {
+        method,
+        headers: {'Content-Type':'application/json'},
+        body: body ? JSON.stringify(body) : null
+      });
+      return res.json();
+    }
+
+    async function loadNotes(){
+      const notes = await api(`/api/reports/${reportId}/notes`);
+      const ul = document.getElementById('note-list');
+      ul.innerHTML = '';
+      notes.forEach(n => {
+        ul.insertAdjacentHTML('beforeend', `
+          <li class="list-group-item d-flex justify-content-between align-items-start">
+            <div>
+              <small class="text-muted">${n.username} • ${new Date(n.created_at).toLocaleString()}</small><br>
+              ${n.text}
+            </div>
+            <div>
+              <button class="btn btn-sm btn-outline-secondary" onclick="openEdit(${n.id}, '${n.text.replace(/'/g,"\\'")}')">✏️</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteNote(${n.id})">🗑️</button>
+            </div>
+          </li>
+        `);
+      });
+    }
+
+    window.openEdit = (id, text='') => {
+      editingId = id;
+      document.getElementById('note-text').value = text;
+      modal.show();
+    };
+
+    window.deleteNote = async id => {
+      await api(`/api/notes/${id}`, 'DELETE');
+      loadNotes();
+    };
+
+    document.getElementById('add-note-btn').onclick = () => openEdit(null, '');
+    document.getElementById('save-note-btn').onclick = async () => {
+      const txt = document.getElementById('note-text').value.trim();
+      if (!txt) return;
+      const url    = editingId ? `/api/notes/${editingId}` : `/api/reports/${reportId}/notes`;
+      const method = editingId ? 'PATCH' : 'POST';
+      await api(url, method, { text: txt });
+      editingId = null;
+      modal.hide();
+      loadNotes();
+    };
+
+    document.addEventListener('DOMContentLoaded', loadNotes);
+  })();
+  </script>
+
+{% endif %}

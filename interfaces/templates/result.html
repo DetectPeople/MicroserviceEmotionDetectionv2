@@ -6,35 +6,28 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/select_video.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <title>Emotion Detection Result</title>
     <style>
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
             background: linear-gradient(135deg, #1a73e8, #4285f4);
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            margin: 0;
+            font-family: 'Poppins', sans-serif;
             color: white;
+            margin: 0;
+            padding-top: 50px;
         }
         .container {
-            text-align: center;
+            max-width: 800px;
             background-color: rgba(255, 255, 255, 0.1);
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            max-width: 800px;
-            width: 90%;
+            margin-bottom: 50px;
         }
         h1 {
             font-size: 2.5em;
             margin-bottom: 20px;
-        }
-        p {
-            font-size: 1.2em;
-            margin: 10px 0;
         }
         .video-container {
             margin: 20px 0;
@@ -45,46 +38,34 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-        .link-buttons {
-            margin-top: 20px;
-        }
-        .link-buttons a {
+        .link-buttons a, .link-buttons button {
             color: white;
-            text-decoration: none;
             background-color: #0073e6;
             padding: 8px 16px;
             border-radius: 5px;
             margin: 5px;
             display: inline-block;
-            transition: background 0.3s ease;
+            border: none;
         }
-        .link-buttons a:hover {
+        .link-buttons a:hover, .link-buttons button:hover {
             background-color: #005bb5;
         }
+        /* Notes cards */
+        #notes-section h4 { color: #fff; margin-bottom: 15px; }
+        .note-card { background-color: rgba(255,255,255,0.15); border: none; margin-bottom: 10px; }
+        .note-card .card-body { color: #fff; display: flex; justify-content: space-between; align-items: start; }
+        .note-text { white-space: pre-wrap; }
+        .note-actions .btn { color: #fff; }
     </style>
-    <script>
-        // Definir la función downloadEmotionsExcel
-        function downloadEmotionsExcel() {
-            // Obtener el videoId del atributo de datos
-            const videoId = document.getElementById('download-button').dataset.videoId;
-            // Verificar si el videoId es válido
-            if (videoId) {
-                // Construir la URL de descarga con el videoId
-                const downloadUrl = `/download_emotions_excel/${videoId}`;
-                // Redirigir al usuario a la URL de descarga
-                window.location.href = downloadUrl;
-            } else {
-                console.error("Video ID is undefined or invalid.");
-            }
-        }
-    </script>
 </head>
 <body>
     {% include 'sidebar.html' %}
-    <div class="container">
-        <h1>Emotion Detection Result</h1>
+    <div class="d-flex justify-content-center">
+      <div class="container">
 
-        <div class="video-container">
+        <h1 class="text-center">Emotion Detection Result</h1>
+
+        <div class="video-container text-center">
             <p>Processed Video:</p>
             <video controls>
                 <source src="{{ url_for('emotion_api.get_video', video_filename=video_filename) }}" type="video/mp4">
@@ -92,15 +73,115 @@
             </video>
         </div>
 
-        <div class="link-buttons">
+        <div class="link-buttons text-center">
             <a href="{{ url_for('emotion_api.select_video') }}">Select Another Video</a>
             <a href="http://127.0.0.1:5000/">Upload Video</a>
             <a href="http://127.0.0.1:5003/">Body Tracking & Heatmap</a>
-            <!-- Botón de descarga actualizado -->
             <a href="#" id="download-button" data-video-id="{{ video_id }}" onclick="downloadEmotionsExcel()">Download Emotions</a>
-            <a href="{{ url_for('emotion_api.view_charts', video_id=video_id) }}" class="btn btn-success mt-4">📈 Ver Gráficas</a>
-
+            <a href="{{ url_for('emotion_api.view_charts', video_id=video_id) }}">📈 Ver Gráficas</a>
         </div>
+
+        {% if emotion_report_id %}
+        <div class="text-center mt-4">
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#noteModal">
+            <i class="fas fa-plus"></i> Agregar nota
+          </button>
+        </div>
+
+        <!-- Notes List -->
+        <div id="notes-section" class="mt-4">
+          <h4>Notas</h4>
+          <div id="notes-container"></div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="noteModal" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Nueva nota</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <textarea id="note-text" class="form-control" rows="4" placeholder="Escribe tu nota..."></textarea>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button id="save-note-btn" type="button" class="btn btn-success">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function downloadEmotionsExcel() {
+            const videoId = document.getElementById('download-button').dataset.videoId;
+            if (videoId) window.location.href = `/download_emotions_excel/${videoId}`;
+        }
+        (function(){
+          const reportId = {{ emotion_report_id or 'null' }};
+          if (!reportId) return;
+
+          window.openEdit = (id, text) => {
+            document.getElementById('note-text').value = text;
+            document.getElementById('save-note-btn').dataset.editing = id;
+            var modal = new bootstrap.Modal(document.getElementById('noteModal'));
+            modal.show();
+          };
+
+          window.deleteNote = async id => {
+            await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+            loadNotes();
+          };
+
+          async function loadNotes() {
+            const res = await fetch(`/api/reports/${reportId}/notes`);
+            const notes = await res.json();
+            const container = document.getElementById('notes-container');
+            container.innerHTML = '';
+            notes.forEach(n=>{
+              const card = document.createElement('div');
+              card.className = 'card note-card';
+              card.innerHTML = `
+                <div class="card-body">
+                  <div>
+                    <small class="text-muted">${n.username} • ${new Date(n.created_at).toLocaleString()}</small>
+                    <p class="note-text mt-2">${n.text}</p>
+                  </div>
+                  <div class="note-actions btn-group btn-group-sm">
+                    <button class="btn btn-outline-light" onclick="openEdit(${n.id}, '${n.text.replace(/'/g,"\\'")}')"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-outline-light" onclick="deleteNote(${n.id})"><i class="fas fa-trash"></i></button>
+                  </div>
+                </div>`;
+              container.append(card);
+            });
+          }
+
+          document.getElementById('save-note-btn').onclick = async function() {
+            const id = this.dataset.editing;
+            const txt = document.getElementById('note-text').value.trim();
+            if (!txt) return;
+            const url = id ? `/api/notes/${id}` : `/api/reports/${reportId}/notes`;
+            const method = id ? 'PATCH' : 'POST';
+            await fetch(url, {
+              method,
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ text: txt })
+            });
+            this.removeAttribute('data-editing');
+            var modal = bootstrap.Modal.getInstance(document.getElementById('noteModal'));
+            modal.hide();
+            document.getElementById('note-text').value = '';
+            loadNotes();
+          };
+
+          document.addEventListener('DOMContentLoaded', loadNotes);
+        })();
+    </script>
 </body>
 </html>

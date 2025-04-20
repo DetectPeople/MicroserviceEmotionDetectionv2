@@ -1,81 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory
-
-from entities import Emotion, Frame,Person,db
-from repository.video_repository import VideoRepository
-from repository.frame_repository import FrameRepository
-from use_cases.process_emotion_use_case import ProcessEmotionUseCase
-
-from config import Config
-import os
-import logging
-import requests
-from flask import Response
-import csv
-from io import StringIO
-
-from collections import defaultdict
-import statistics
-import xlsxwriter
-from io import BytesIO
-
-emotion_api = Blueprint('emotion_api', __name__)
-video_repository = VideoRepository()
-frame_repository = FrameRepository()
-process_emotion_use_case = ProcessEmotionUseCase()
-
-@emotion_api.route('/', methods=['GET'])
-def select_video():
-    logging.info("Loaded video selection page.")
-    videos = video_repository.get_all()
-    return render_template('select_video.html', videos=videos)
-
-@emotion_api.route('/process', methods=['POST'])
-def process_video():
-    video_id = int(request.form['video_id'])
-    logging.info(f"Processing initiated for video ID {video_id}")
-
-    # Redirect immediately to processing page
-    return redirect(url_for('emotion_api.processing', video_id=video_id))
-
-@emotion_api.route('/start_processing/<int:video_id>', methods=['GET'])
-def start_processing(video_id):
-    try:
-        # Intentar procesar el video
-        result = process_emotion_use_case.execute(video_id)
-
-        # Si los frames no están listos, redirigir a frame_processing.html
-        if result is None:
-            logging.info(f"Frames for video ID {video_id} are still being processed.")
-            return render_template('frame_processing.html', video_id=video_id)
-
-        # Proceder al resultado si el procesamiento está completo
-        output_video_filename = os.path.basename(result)
-        logging.info(f"Emotion detection complete for video ID {video_id}")
-        # Redirigir incluyendo ambos parámetros: video_filename y video_id
-        return redirect(url_for('emotion_api.result', video_filename=output_video_filename, video_id=video_id))
-
-    except Exception as e:
-        logging.error(f"Error in processing video ID {video_id}: {e}")
-        return f"Error processing video: {str(e)}", 500
-
-
-@emotion_api.route('/processing/<int:video_id>')
-def processing(video_id):
-    # Render the processing page and then call the start processing endpoint
-    return render_template('processing.html', video_id=video_id)
-
-@emotion_api.route('/result/<video_filename>/<int:video_id>')
-def result(video_filename, video_id):
-    # Pasar el video_id al contexto de la plantilla
-    return render_template('result.html', video_filename=video_filename, video_id=video_id)
-
-@emotion_api.route('/videos/<video_filename>')
-def get_video(video_filename):
-    return send_from_directory(Config.ANNOTATED_VIDEOS_DIR, video_filename)
-
-
 from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, Response
-from entities import Emotion, Frame, db
+
+from entities import Emotion, Frame, db, Person
 from repository.video_repository import VideoRepository
 from repository.frame_repository import FrameRepository
 from use_cases.process_emotion_use_case import ProcessEmotionUseCase
@@ -86,70 +11,7 @@ from collections import defaultdict
 import statistics
 import xlsxwriter
 from io import BytesIO
-
-emotion_api = Blueprint('emotion_api', __name__)
-video_repository = VideoRepository()
-frame_repository = FrameRepository()
-process_emotion_use_case = ProcessEmotionUseCase()
-
-
-@emotion_api.route('/', methods=['GET'])
-def select_video():
-    logging.info("Loaded video selection page.")
-    videos = video_repository.get_all()
-    return render_template('select_video.html', videos=videos)
-
-
-@emotion_api.route('/process', methods=['POST'])
-def process_video():
-    video_id = int(request.form['video_id'])
-    logging.info(f"Processing initiated for video ID {video_id}")
-    return redirect(url_for('emotion_api.processing', video_id=video_id))
-
-
-@emotion_api.route('/start_processing/<int:video_id>', methods=['GET'])
-def start_processing(video_id):
-    try:
-        result = process_emotion_use_case.execute(video_id)
-        if result is None:
-            logging.info(f"Frames for video ID {video_id} are still being processed.")
-            return render_template('frame_processing.html', video_id=video_id)
-
-        output_video_filename = os.path.basename(result)
-        logging.info(f"Emotion detection complete for video ID {video_id}")
-        return redirect(url_for('emotion_api.result', video_filename=output_video_filename, video_id=video_id))
-    except Exception as e:
-        logging.error(f"Error in processing video ID {video_id}: {e}")
-        return f"Error processing video: {str(e)}", 500
-
-
-@emotion_api.route('/processing/<int:video_id>')
-def processing(video_id):
-    return render_template('processing.html', video_id=video_id)
-
-
-@emotion_api.route('/result/<video_filename>/<int:video_id>')
-def result(video_filename, video_id):
-    return render_template('result.html', video_filename=video_filename, video_id=video_id)
-
-
-@emotion_api.route('/videos/<video_filename>')
-def get_video(video_filename):
-    return send_from_directory(Config.ANNOTATED_VIDEOS_DIR, video_filename)
-
-
-from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, Response
-from entities import Emotion, Frame, db
-from repository.video_repository import VideoRepository
-from repository.frame_repository import FrameRepository
-from use_cases.process_emotion_use_case import ProcessEmotionUseCase
-from config import Config
-import os
-import logging
-from collections import defaultdict
-import statistics
-import xlsxwriter
-from io import BytesIO
+from repository.emotion_report_repository import EmotionReportRepository   #NUEVO
 
 emotion_api = Blueprint('emotion_api', __name__)
 video_repository = VideoRepository()
@@ -189,64 +51,10 @@ def processing(video_id):
 
 @emotion_api.route('/result/<video_filename>/<int:video_id>')
 def result(video_filename, video_id):
-    return render_template('result.html', video_filename=video_filename, video_id=video_id)
+    rep = EmotionReportRepository().get_by_video_id(video_id)
+    report_id = rep.id if rep else None
 
-@emotion_api.route('/videos/<video_filename>')
-def get_video(video_filename):
-    return send_from_directory(Config.ANNOTATED_VIDEOS_DIR, video_filename)
-
-from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, Response
-from entities import Emotion, Frame, db
-from repository.video_repository import VideoRepository
-from repository.frame_repository import FrameRepository
-from use_cases.process_emotion_use_case import ProcessEmotionUseCase
-from config import Config
-import os
-import logging
-from collections import defaultdict
-import statistics
-import xlsxwriter
-from io import BytesIO
-
-emotion_api = Blueprint('emotion_api', __name__)
-video_repository = VideoRepository()
-frame_repository = FrameRepository()
-process_emotion_use_case = ProcessEmotionUseCase()
-
-@emotion_api.route('/', methods=['GET'])
-def select_video():
-    logging.info("Loaded video selection page.")
-    videos = video_repository.get_all()
-    return render_template('select_video.html', videos=videos)
-
-@emotion_api.route('/process', methods=['POST'])
-def process_video():
-    video_id = int(request.form['video_id'])
-    logging.info(f"Processing initiated for video ID {video_id}")
-    return redirect(url_for('emotion_api.processing', video_id=video_id))
-
-@emotion_api.route('/start_processing/<int:video_id>', methods=['GET'])
-def start_processing(video_id):
-    try:
-        result = process_emotion_use_case.execute(video_id)
-        if result is None:
-            logging.info(f"Frames for video ID {video_id} are still being processed.")
-            return render_template('frame_processing.html', video_id=video_id)
-
-        output_video_filename = os.path.basename(result)
-        logging.info(f"Emotion detection complete for video ID {video_id}")
-        return redirect(url_for('emotion_api.result', video_filename=output_video_filename, video_id=video_id))
-    except Exception as e:
-        logging.error(f"Error in processing video ID {video_id}: {e}")
-        return f"Error processing video: {str(e)}", 500
-
-@emotion_api.route('/processing/<int:video_id>')
-def processing(video_id):
-    return render_template('processing.html', video_id=video_id)
-
-@emotion_api.route('/result/<video_filename>/<int:video_id>')
-def result(video_filename, video_id):
-    return render_template('result.html', video_filename=video_filename, video_id=video_id)
+    return render_template('result.html', video_filename=video_filename, video_id=video_id, emotion_report_id = report_id)
 
 @emotion_api.route('/videos/<video_filename>')
 def get_video(video_filename):
@@ -549,6 +357,9 @@ def view_charts(video_id):
     #print("Person ages:", person_ages)
     person_ages = {k: v['avg_age_value'] for k, v in person_info.items() if v['avg_age_value'] is not None}
 
+    rep = EmotionReportRepository().get_by_video_id(video_id)
+    report_id = rep.id if rep else None  # ② valor a pasar
+
     return render_template('charts.html',
                            emotion_data=dict(emotion_count),
                            emotions_by_person=emotions_by_person,
@@ -557,4 +368,5 @@ def view_charts(video_id):
                            general_avg_age=general_avg_age,
                            gender_distribution=dict(gender_distribution),
                            video_id=video_id,
-                           person_ages=person_ages)
+                           person_ages=person_ages,
+                           emotion_report_id=report_id)

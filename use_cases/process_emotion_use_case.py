@@ -12,6 +12,11 @@ from entities.emotion import Emotion
 from config import Config
 import os
 import numpy as np
+#nuevo
+import statistics
+from collections import defaultdict
+from entities.emotion_report import EmotionReport
+from repository.emotion_report_repository import EmotionReportRepository      # NUEVO
 
 class ProcessEmotionUseCase:
     def __init__(self):
@@ -21,6 +26,7 @@ class ProcessEmotionUseCase:
         self.person_repository = PersonRepository()
         self.emotion_service = EmotionDetectionService()
         self.video_generation_service = VideoGenerationService()
+        self.emotion_report_repository = EmotionReportRepository()
 
     def execute(self, video_id):
         video = self.video_repository.get_by_id(video_id)
@@ -70,6 +76,16 @@ class ProcessEmotionUseCase:
         frames_to_update = []
         persons_to_update = []
         total_frames = len(frames)
+
+        #NUEVO
+
+        # acumuladores para el informe
+        brightness_vals, contrast_vals, complexity_vals = [], [], []
+        temperature_vals, sharpness_vals = [], []
+        emotion_count  = defaultdict(int)
+        person_set     = set()
+        total_emotions = 0
+
         for idx, frame in enumerate(frames):
             annotations, annotated_frame_path, frame_data = self.emotion_service.detect_emotions_in_frame(frame.path)
             frame_data['annotated_path'] = annotated_frame_path
@@ -102,9 +118,53 @@ class ProcessEmotionUseCase:
                     video_id=video.id
                 )
                 self.emotion_repository.save(emotion)
+                emotion_count[annotation['emotion']] += 1  # acumula cantidad por tipo
+                total_emotions += 1  # suma total de emociones
+                person_set.add(annotation['person_identity'])
+
+
+
+            # 🔹 NUEVO ── acumular métricas de frame
+            if frame.average_brightness is not None: brightness_vals.append(frame.average_brightness)
+            if frame.contrast_ratio is not None: contrast_vals.append(frame.contrast_ratio)
+            if frame.background_complexity is not None: complexity_vals.append(frame.background_complexity)
+            if frame.color_temperature is not None: temperature_vals.append(frame.color_temperature)
+            if frame.sharpness is not None: sharpness_vals.append(frame.sharpness)
+
 
             progress_percent = int(((idx + 1) / total_frames) * 100)
             logging.info(f"Processed frame {idx + 1}/{total_frames} ({progress_percent}% complete)")
+
+        #NUEVO
+        # 🔹 NUEVO ───────── crear summary_json ─────────
+        summary_json = {
+            "total_frames": total_frames,
+            "total_emotions": total_emotions,
+            "avg_confidence": round(
+                statistics.mean([e.confidence for e in self.emotion_repository.get_emotions_by_video_id(video_id)])
+                * 100, 2) if total_emotions else 0,
+            "most_common_emotion": max(emotion_count, key=emotion_count.get) if emotion_count else None,
+            "avg_emotions_per_person": round(total_emotions / len(person_set), 2) if person_set else 0,
+            "frame_metrics": {
+                "avg_brightness": round(statistics.mean(brightness_vals), 2) if brightness_vals else 0,
+                "avg_contrast_ratio": round(statistics.mean(contrast_vals), 2) if contrast_vals else 0,
+                "avg_background_complexity": round(statistics.mean(complexity_vals), 2) if complexity_vals else 0,
+                "avg_color_temperature": round(statistics.mean(temperature_vals), 2) if temperature_vals else 0,
+                "avg_sharpness": round(statistics.mean(sharpness_vals), 2) if sharpness_vals else 0
+            },
+            "persons": list(person_set)
+        }
+
+        # 🔹 NUEVO ───────── crear o actualizar EmotionReport ─────────
+        report = self.emotion_report_repository.get_by_video_id(video_id)
+        if not report:
+            report = EmotionReport(video_id=video_id)
+
+        report.summary_json = summary_json
+        report.status       = 'processing'
+        self.emotion_report_repository.save(report)
+
+
 
         # Commit all changes to frames and persons
         db.session.add_all(frames_to_update)
@@ -115,6 +175,11 @@ class ProcessEmotionUseCase:
         output_video_filename = f'video_{video.id}_emotion_annotated.mp4'
         output_video_path = os.path.join(Config.ANNOTATED_VIDEOS_DIR, output_video_filename)
         self.video_generation_service.generate_video_from_frames(annotated_frames, output_video_path)
+
+        # NUEVO
+        report.path = output_video_path
+        report.status = 'done'
+        self.emotion_report_repository.save(report)
 
         logging.info("Emotion detection complete, annotated video generated.")
         return output_video_path

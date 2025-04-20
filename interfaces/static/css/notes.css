@@ -1,0 +1,33 @@
+/* Estilos ligeros sobre Bootstrap */
+#notes-card .card-body { padding: 1.25rem; }
+
+#notes-card .list-group-item {
+  border: none;
+  border-bottom: 1px solid #e6e6e6;
+}
+#notes-card .list-group-item:last-child { border-bottom: none; }
+
+#notes-card button.btn-outline-secondary,
+#notes-card button.btn-outline-danger {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+#noteModal textarea { resize: vertical; }
+/* Hace que la lista sea “flush” dentro de la card */
+#note-list {
+  margin: 0;
+  padding: 0;
+}
+#note-list .list-group-item {
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+}
+#note-list .list-group-item:last-child {
+  border-bottom: none;
+}
+
+/* Asegura que el botón ocupe todo el ancho y con espacio */
+.card-footer #add-note-btn {
+  margin: 0.5rem 0;
+}

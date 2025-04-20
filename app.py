@@ -5,6 +5,7 @@ from flask import Flask
 from config import Config
 from entities import db
 from interfaces.emotion_api import emotion_api
+from interfaces.notes_api import notes_api
 import os
 
 # Configure logging to display all levels of messages to the console
@@ -22,6 +23,7 @@ db.init_app(app)
 
 # Register the blueprint
 app.register_blueprint(emotion_api)
+app.register_blueprint(notes_api)
 
 with app.app_context():
     # Import models
@@ -29,8 +31,11 @@ with app.app_context():
     from entities.frame import Frame
     from entities.person import Person
     from entities.emotion import Emotion
+    from entities.emotion_report import EmotionReport  # ← NUEVO
+    from entities.emotion_report_notes import EmotionReportNote # ← NUEVO
 
     # Create the database tables
+
     db.create_all()
 
 if __name__ == '__main__':

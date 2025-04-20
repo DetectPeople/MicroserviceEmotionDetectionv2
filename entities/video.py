@@ -16,5 +16,10 @@ class Video(db.Model):
     frames = db.relationship('Frame', back_populates='video', lazy=True)
     persons = db.relationship('Person', back_populates='video', lazy=True)
 
+    #new relationship
+    reports = db.relationship('EmotionReport', back_populates='video',
+                              cascade='all, delete-orphan', lazy=True)
+
+
     def __repr__(self):
         return f'<Video {self.filename}>'
