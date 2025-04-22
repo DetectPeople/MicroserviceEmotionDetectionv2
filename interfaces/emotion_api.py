@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, Response
+from flask import Blueprint, render_template, request, redirect, url_for, send_from_directory, Response, abort, jsonify
 
 from entities import Emotion, Frame, db, Person
 from repository.video_repository import VideoRepository
@@ -17,7 +17,7 @@ emotion_api = Blueprint('emotion_api', __name__)
 video_repository = VideoRepository()
 frame_repository = FrameRepository()
 process_emotion_use_case = ProcessEmotionUseCase()
-
+repo = EmotionReportRepository()
 @emotion_api.route('/', methods=['GET'])
 def select_video():
     logging.info("Loaded video selection page.")
@@ -89,6 +89,8 @@ def download_emotions_excel(video_id):
             logging.error(f"No data found for video ID {video_id}")
             return f"No emotion data found for video ID {video_id}", 404
 
+        report = EmotionReportRepository().get_by_video_id(video_id)
+        conclusion_text = report.conclusion if report and report.conclusion else "No conclusion has been recorded."
         # Crear un archivo Excel en memoria
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
@@ -178,19 +180,6 @@ def download_emotions_excel(video_id):
         worksheet.write(summary_start_row + 5, 0, 'Average Number of Emotions per Person')
         worksheet.write(summary_start_row + 5, 1, avg_emotions_per_person)
 
-        # Escribir promedios de las métricas de frame
-        worksheet.write(summary_start_row + 7, 0, 'Frame Metrics:')
-        worksheet.write(summary_start_row + 8, 0, 'Average Brightness')
-        worksheet.write(summary_start_row + 8, 1, avg_brightness)
-        worksheet.write(summary_start_row + 9, 0, 'Average Contrast Ratio')
-        worksheet.write(summary_start_row + 9, 1, avg_contrast)
-        worksheet.write(summary_start_row + 10, 0, 'Average Background Complexity')
-        worksheet.write(summary_start_row + 10, 1, avg_complexity)
-        worksheet.write(summary_start_row + 11, 0, 'Average Color Temperature')
-        worksheet.write(summary_start_row + 11, 1, avg_temperature)
-        worksheet.write(summary_start_row + 12, 0, 'Average Sharpness')
-        worksheet.write(summary_start_row + 12, 1, avg_sharpness)
-
         # Escribir información de todas las personas detectadas
         person_info_start_row = summary_start_row + 14
         worksheet.write(person_info_start_row, 0, 'Detected Persons:')
@@ -232,7 +221,8 @@ def download_emotions_excel(video_id):
         emotion_chart.set_style(11)
 
         # Insertar el gráfico de emociones en la hoja de Excel
-        worksheet.insert_chart(f'A{chart_data_row + len(emotion_count) + 4}', emotion_chart)
+        worksheet.insert_chart(f'D{chart_data_row}', emotion_chart)
+
 
         # 2. Gráfico de promedios de las métricas de frame
         avg_chart = workbook.add_chart({'type': 'bar'})
@@ -259,7 +249,29 @@ def download_emotions_excel(video_id):
         avg_chart.set_style(11)
 
         # Insertar el gráfico de métricas en la hoja de Excel
-        worksheet.insert_chart(f'A{metric_chart_data_row + len(metric_names) + 4}', avg_chart)
+        worksheet.insert_chart(f'D{metric_chart_data_row}', avg_chart)
+
+        # Calcular fila final luego del último gráfico (gráfico de métricas)
+        last_graph_row = metric_chart_data_row + len(metric_names) + 10  # espacio después del gráfico
+
+        # Crear formato visual para la conclusión
+        highlight_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#DDEBF7',  # Azul claro
+            'border': 1,
+            'text_wrap': True,
+            'valign': 'top'
+        })
+
+        # Escribir conclusión dejando espacio suficiente debajo del gráfico
+        conclusion_start_row = last_graph_row + 4
+        worksheet.write(conclusion_start_row, 0, 'Conclusion:', highlight_format)
+        worksheet.write(conclusion_start_row + 1, 0, conclusion_text, highlight_format)
+
+        # Ajustar formato visual
+        worksheet.set_row(conclusion_start_row + 1, 80)
+        worksheet.set_column('A:B', 60)
+        worksheet.set_selection(f'A{conclusion_start_row + 1}')
 
         # Cerrar y devolver el archivo Excel
         workbook.close()
@@ -370,3 +382,52 @@ def view_charts(video_id):
                            video_id=video_id,
                            person_ages=person_ages,
                            emotion_report_id=report_id)
+
+
+##nuevo
+@emotion_api.get('/api/reports/<int:report_id>/conclusion')
+def get_conclusion(report_id):
+    report = repo.get_by_id(report_id)
+    if not report:
+        abort(404, description="Report not found")
+    return jsonify({
+        'report_id': report.id,
+        'conclusion': report.conclusion or ""
+    })
+
+# --- Crear/Actualizar conclusión ---
+@emotion_api.post('/api/reports/<int:report_id>/conclusion')
+def set_conclusion(report_id):
+    report = repo.get_by_id(report_id)
+    if not report:
+        abort(404, description="Report not found")
+    data = request.get_json(force=True)
+    text = data.get('conclusion', '').strip()
+    if text == '':
+        abort(400, description="Conclusion cannot be empty")
+    updated = repo.update_conclusion(report_id, text)
+    return jsonify({'status': 'ok', 'report_id': updated.id, 'conclusion': updated.conclusion})
+
+@emotion_api.delete('/api/reports/<int:report_id>/conclusion')
+def delete_conclusion(report_id):
+    report = repo.get_by_id(report_id)
+    if not report:
+        abort(404, description="Report not found")
+    cleared = repo.clear_conclusion(report_id)
+    return jsonify({
+        'status': 'deleted',
+        'report_id': cleared.id,
+        'conclusion': cleared.conclusion
+    })
+
+@emotion_api.patch('/api/reports/<int:report_id>/conclusion')
+def patch_conclusion(report_id):
+    report = repo.get_by_id(report_id)
+    if not report:
+        abort(404, description="Report not found")
+    data = request.get_json(force=True)
+    text = data.get('conclusion', '').strip()
+    if text == '':
+        abort(400, description="Conclusion cannot be empty")
+    updated = repo.update_conclusion(report_id, text)
+    return jsonify({'status': 'updated', 'report_id': updated.id, 'conclusion': updated.conclusion})

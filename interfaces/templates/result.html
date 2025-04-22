@@ -78,19 +78,19 @@
             <a href="http://127.0.0.1:5000/">Upload Video</a>
             <a href="http://127.0.0.1:5003/">Body Tracking & Heatmap</a>
             <a href="#" id="download-button" data-video-id="{{ video_id }}" onclick="downloadEmotionsExcel()">Download Emotions</a>
-            <a href="{{ url_for('emotion_api.view_charts', video_id=video_id) }}">📈 Ver Gráficas</a>
+            <a href="{{ url_for('emotion_api.view_charts', video_id=video_id) }}">📈 See Charts</a>
         </div>
 
         {% if emotion_report_id %}
         <div class="text-center mt-4">
           <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#noteModal">
-            <i class="fas fa-plus"></i> Agregar nota
+            <i class="fas fa-plus"></i> Add note
           </button>
         </div>
 
         <!-- Notes List -->
         <div id="notes-section" class="mt-4">
-          <h4>Notas</h4>
+          <h4>Notes</h4>
           <div id="notes-container"></div>
         </div>
 

@@ -12,12 +12,12 @@
 <body>
 
 <div class="container mt-5">
-    <h1 class="text-center mb-4">Gráficos de Emociones por Persona y General</h1>
+    <h1 class="text-center mb-4">Emotion Charts by Person and Overall</h1>
 
     <!-- Gráfico General de Emociones -->
     <div class="card shadow mb-5">
         <div class="card-body">
-            <h3 class="card-title text-center">Gráfico General de Emociones</h3>
+            <h3 class="card-title text-center">Overall Emotion Chart</h3>
             <canvas id="generalEmotionChart"></canvas>
         </div>
     </div>
@@ -28,7 +28,7 @@
         <div class="col-md-6 mb-4">
             <div class="card chart-card shadow">
                 <div class="card-body">
-                    <h5 class="card-title text-center">{{ person }} - Emociones</h5>
+                    <h5 class="card-title text-center">{{ person }} - Emotions</h5>
                     <canvas id="emotionChart_{{ loop.index }}"></canvas>
                 </div>
             </div>
@@ -39,13 +39,13 @@
     <!-- Mostrar métricas generales -->
     <div class="card shadow mb-5">
         <div class="card-body">
-            <h3 class="card-title text-center">Métricas Generales</h3>
+            <h3 class="card-title text-center">General Metrics</h3>
             <ul class="list-group">
-                <li class="list-group-item">Brillo Promedio: {{ metrics['Average Brightness'] }}</li>
-                <li class="list-group-item">Relación de Contraste: {{ metrics['Contrast Ratio'] }}</li>
-                <li class="list-group-item">Complejidad de Fondo: {{ metrics['Background Complexity'] }}</li>
-                <li class="list-group-item">Temperatura de Color: {{ metrics['Color Temperature'] }}</li>
-                <li class="list-group-item">Nitidez: {{ metrics['Sharpness'] }}</li>
+                <li class="list-group-item">Average Brightness: {{ metrics['Average Brightness'] }}</li>
+                <li class="list-group-item">Contrast Ratio: {{ metrics['Contrast Ratio'] }}</li>
+                <li class="list-group-item">Background Complexity: {{ metrics['Background Complexity'] }}</li>
+                <li class="list-group-item">Color Temperature: {{ metrics['Color Temperature'] }}</li>
+                <li class="list-group-item">Sharpness: {{ metrics['Sharpness'] }}</li>
             </ul>
         </div>
     </div>
@@ -53,15 +53,15 @@
         <!-- Info por persona -->
     <div class="card shadow mb-5">
         <div class="card-body">
-            <h3 class="card-title text-center">Personas Detectadas</h3>
+            <h3 class="card-title text-center">Detected People</h3>
             <div class="row">
                 {% for person, info in person_info.items() %}
                 <div class="col-md-4 mb-4">
                     <div class="card h-100 text-center">
                         <div class="card-body">
                             <h5 class="card-title">{{ person }}</h5>
-                            <p><strong>Edad Estimada:</strong> {{ info.age_estimation or "Desconocida" }}</p>
-                            <p><strong>Género:</strong> {{ info.gender or "Desconocido" }}</p>
+                            <p><strong>Estimated Age:</strong> {{ info.age_estimation or "Unknown" }}</p>
+                            <p><strong>Gender:</strong> {{ info.gender or "Unknown" }}</p>
                         </div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
     {% if general_avg_age %}
     <div class="card shadow mb-5">
         <div class="card-body text-center">
-            <h4>🧠 Promedio Estimado de Edad General: <strong>{{ general_avg_age }} años</strong></h4>
+            <h4>🧠 Estimated General Average Age: <strong>{{ general_avg_age }} years</strong></h4>
         </div>
     </div>
     {% endif %}
@@ -82,11 +82,29 @@
     {% if gender_distribution %}
     <div class="card shadow mb-5">
         <div class="card-body">
-            <h3 class="card-title text-center">Distribución por Género</h3>
+            <h3 class="card-title text-center">Gender Distribution</h3>
             <canvas id="genderPieChart"></canvas>
         </div>
     </div>
     {% endif %}
+
+        <!-- Conclusión -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <h4 class="card-title">Conclusion</h4>
+        <div id="conclusion-display" class="mb-3" style="white-space: pre-wrap; min-height: 3em; border: 1px solid #ddd; padding: .5em; background: #f9f9f9;">
+          Waiting...
+        </div>
+        <textarea id="conclusion-edit" class="form-control mb-2" style="display:none;" rows="4"></textarea>
+        <div id="conclusion-buttons">
+          <button id="edit-concl-btn" class="btn btn-outline-primary btn-sm">✏️ Edit</button>
+          <button id="delete-concl-btn" class="btn btn-outline-danger btn-sm">🗑️ Delete</button>
+          <button id="save-concl-btn" class="btn btn-success btn-sm" style="display:none;">💾 Save</button>
+          <button id="cancel-concl-btn" class="btn btn-secondary btn-sm" style="display:none;">✖️ Cancel</button>
+        </div>
+      </div>
+    </div>
+
 
     {% include 'partials/notes_section.html' %}
 
@@ -96,14 +114,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <script>
-    // Gráfico General
+    // Overall Emotion Chart
     const generalEmotionCtx = document.getElementById('generalEmotionChart').getContext('2d');
     const generalEmotionChart = new Chart(generalEmotionCtx, {
         type: 'bar',
         data: {
             labels: {{ emotion_data.keys()|list|tojson }},
             datasets: [{
-                label: 'Emociones Generales',
+                label: 'Overall Emotions',
                 data: {{ emotion_data.values()|list|tojson }},
                 backgroundColor: '#4D96FF',
                 borderRadius: 8
@@ -118,7 +136,7 @@
             plugins: {
                 title: {
                     display: true,
-                    text: 'Frecuencias de Emociones Generales',
+                    text: 'Overall Emotion Frequencies',
                     font: { size: 18 }
                 },
                 tooltip: {
@@ -139,7 +157,7 @@
         }
     });
 
-    // Gráficos Individuales por Persona
+    // Individual Emotion Charts by Person
     {% for person, emotions in emotions_by_person.items() %}
     const emotionCtx{{ loop.index }} = document.getElementById('emotionChart_{{ loop.index }}').getContext('2d');
     const emotionChart{{ loop.index }} = new Chart(emotionCtx{{ loop.index }}, {
@@ -162,7 +180,7 @@
             plugins: {
                 title: {
                     display: true,
-                    text: '{{ person }} - Frecuencias de Emociones',
+                    text: '{{ person }} - Emotion Frequencies',
                     font: { size: 18 }
                 },
                 tooltip: {
@@ -184,15 +202,16 @@
     });
     {% endfor %}
 
-    // Gráficos de Edad por Persona
-
-    // Gráficos de Edad por Persona
+    // Estimated Age Charts per Person
     {% for person, age in person_ages.items() %}
-    const ageCtx{{ loop.index0 }} = document.getElementById('ageChart_age_{{ loop.index0 }}').getContext('2d');
-    new Chart(ageCtx{{ loop.index0 }}, {
+    (function() {
+      const canvas = document.getElementById('ageChart_age_{{ loop.index0 }}');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Edad Estimada'],
+            labels: ['Estimated Age'],
             datasets: [{
                 label: '{{ person }}',
                 data: [{{ age }}],
@@ -205,21 +224,19 @@
             plugins: {
                 title: {
                     display: true,
-                    text: '{{ person }} - Edad Estimada',
+                    text: '{{ person }} - Estimated Age',
                     font: { size: 16 }
                 }
             },
             scales: {
-                y: {
-                    beginAtZero: true
-                }
+                y: { beginAtZero: true }
             }
         }
-    });
+      });
+    })();
     {% endfor %}
 
-
-    // Gráfico de distribución por género
+    // Gender Distribution Chart
     {% if gender_distribution %}
     const genderCtx = document.getElementById('genderPieChart').getContext('2d');
     new Chart(genderCtx, {
@@ -229,9 +246,9 @@
             datasets: [{
                 data: {{ gender_distribution.values()|list|tojson }},
                 backgroundColor: [
-                    '#36A2EB', // Azul para "Male"
-                    '#FF6384', // Rosa para "Female"
-                    '#FFCE56', // Amarillo para "Other" o "Unknown"
+                    '#36A2EB', // Blue - Male
+                    '#FF6384', // Pink - Female
+                    '#FFCE56', // Yellow - Other or Unknown
                     '#4BC0C0',
                     '#9966FF'
                 ],
@@ -243,7 +260,7 @@
             plugins: {
                 title: {
                     display: true,
-                    text: 'Distribución por Género',
+                    text: 'Gender Distribution',
                     font: {
                         size: 20
                     }
@@ -254,11 +271,83 @@
             }
         }
     });
-
     {% endif %}
 
+    // Conclusion Editor Logic
+    (function(){
+    const reportId = {{ emotion_report_id if emotion_report_id is not none else 'null' }};
 
+    const display = document.getElementById('conclusion-display');
+    const editTA  = document.getElementById('conclusion-edit');
+    const btnEdit = document.getElementById('edit-concl-btn');
+    const btnDel  = document.getElementById('delete-concl-btn');
+    const btnSave = document.getElementById('save-concl-btn');
+    const btnCan  = document.getElementById('cancel-concl-btn');
+
+    // 1. Load existing conclusion
+    async function loadConclusion(){
+      const res = await fetch(`/api/reports/${reportId}/conclusion`);
+      if (!res.ok) return display.textContent = "Add a conclusion";
+      const { conclusion } = await res.json();
+      display.textContent = conclusion || "Add a conclusion";
+    }
+
+    // 2. Edit mode
+    btnEdit.onclick = () => {
+      editTA.value = display.textContent.trim() === "Add a conclusion" ? '' : display.textContent;
+      display.style.display = 'none';
+      editTA.style.display     = 'block';
+      btnEdit.style.display    = 'none';
+      btnDel.style.display     = 'none';
+      btnSave.style.display    = 'inline-block';
+      btnCan.style.display     = 'inline-block';
+    };
+
+    // 3. Cancel edit
+    btnCan.onclick = () => {
+      display.style.display = 'block';
+      editTA.style.display   = 'none';
+      btnEdit.style.display  = 'inline-block';
+      btnDel.style.display   = 'inline-block';
+      btnSave.style.display  = 'none';
+      btnCan.style.display   = 'none';
+    };
+
+    // 4. Save (POST or PATCH depending)
+    btnSave.onclick = async () => {
+      const txt = editTA.value.trim();
+      if(txt === '') return alert('The conclusion cannot be empty.');
+      const method = display.textContent.trim() === "Add a conclusion" ? 'POST' : 'PATCH';
+      const res = await fetch(`/api/reports/${reportId}/conclusion`, {
+        method,
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ conclusion: txt })
+      });
+      if(res.ok){
+        await loadConclusion();
+        btnCan.onclick();  // reset UI
+      } else {
+        const err = await res.text();
+        alert('Error: ' + err);
+      }
+    };
+
+    // 5. Delete
+    btnDel.onclick = async () => {
+      if(!confirm('Do you want to delete the conclusion?')) return;
+      const res = await fetch(`/api/reports/${reportId}/conclusion`, { method: 'DELETE' });
+      if(res.ok){
+        display.textContent = 'Add a conclusion';
+      } else {
+        alert('The conclusion could not be deleted');
+      }
+    };
+
+    // Initial load
+    loadConclusion();
+    })();
 </script>
+
 
 </body>
 </html>

@@ -17,3 +17,6 @@ class EmotionReport(db.Model):
     video  = db.relationship('Video', back_populates='reports')
     notes  = db.relationship('EmotionReportNote', back_populates='report',
                              cascade='all, delete-orphan', lazy=True)
+
+    #nuevo
+    conclusion = db.Column(db.Text, nullable=True)
