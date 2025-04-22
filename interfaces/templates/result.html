@@ -77,7 +77,9 @@
             <a href="{{ url_for('emotion_api.select_video') }}">Select Another Video</a>
             <a href="http://127.0.0.1:5000/">Upload Video</a>
             <a href="http://127.0.0.1:5003/">Body Tracking & Heatmap</a>
-            <a href="#" id="download-button" data-video-id="{{ video_id }}" onclick="downloadEmotionsExcel()">Download Emotions</a>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#customReportModal">
+              📄 Download Custom Report
+            </button>
             <a href="{{ url_for('emotion_api.view_charts', video_id=video_id) }}">📈 See Charts</a>
         </div>
 
@@ -86,6 +88,49 @@
           <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#noteModal">
             <i class="fas fa-plus"></i> Add note
           </button>
+        </div>
+
+
+
+        <!--nuevo para el checkllist de informes -->
+        <!-- Modal: Custom Report -->
+        <div class="modal fade" id="customReportModal" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-dark">
+              <div class="modal-header">
+                <h5 class="modal-title">Customize Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <form id="customReportForm">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="include-summary" checked>
+                    <label class="form-check-label" for="include-summary">Include Summary</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="include-data" checked>
+                    <label class="form-check-label" for="include-data">Include Raw Data Table</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="include-emotion-chart" checked>
+                    <label class="form-check-label" for="include-emotion-chart">Include Emotion Chart</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="include-gender-chart" checked>
+                    <label class="form-check-label" for="include-gender-chart">Include Gender Chart</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="include-conclusion" checked>
+                    <label class="form-check-label" for="include-conclusion">Include Conclusion</label>
+                  </div>
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button id="generateReportBtn" type="button" class="btn btn-success">Generate and Download</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Notes List -->
@@ -119,10 +164,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function downloadEmotionsExcel() {
-            const videoId = document.getElementById('download-button').dataset.videoId;
-            if (videoId) window.location.href = `/download_emotions_excel/${videoId}`;
-        }
+        // function downloadEmotionsExcel() {
+        //     const videoId = document.getElementById('download-button').dataset.videoId;
+        //     if (videoId) window.location.href = `/download_emotions_excel/${videoId}`;
+        // }
         (function(){
           const reportId = {{ emotion_report_id or 'null' }};
           if (!reportId) return;
@@ -183,5 +228,27 @@
           document.addEventListener('DOMContentLoaded', loadNotes);
         })();
     </script>
+    <script>
+      document.getElementById('generateReportBtn').onclick = function () {
+        const videoId = "{{ video_id }}";
+        const includeSummary = document.getElementById('include-summary').checked;
+        const includeData = document.getElementById('include-data').checked;
+        const includeChart = document.getElementById('include-emotion-chart').checked;
+        const includeGender = document.getElementById('include-gender-chart').checked;
+        const includeConclusion = document.getElementById('include-conclusion').checked;
+
+        const query = new URLSearchParams({
+          summary: includeSummary,
+          data: includeData,
+          chart: includeChart,
+          gender: includeGender,
+          conclusion: includeConclusion
+        }).toString();
+
+        const url = `/download_emotions_excel/${videoId}?${query}`;
+        window.location.href = url;
+      };
+    </script>
+
 </body>
 </html>
