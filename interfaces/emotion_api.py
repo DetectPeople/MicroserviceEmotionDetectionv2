@@ -27,11 +27,22 @@ def select_video():
 @emotion_api.route('/process', methods=['POST'])
 def process_video():
     video_id = int(request.form['video_id'])
+
+    # Si ya existe un informe, evitamos procesar de nuevo
+    if repo.get_by_video_id(video_id):
+        logging.info(f"Report already exists for video ID {video_id}, skipping processing.")
+        return redirect(url_for('emotion_api.result_existing', video_id=video_id))
+
     logging.info(f"Processing initiated for video ID {video_id}")
     return redirect(url_for('emotion_api.processing', video_id=video_id))
 
 @emotion_api.route('/start_processing/<int:video_id>', methods=['GET'])
 def start_processing(video_id):
+    # Verificación de seguridad adicional
+    if repo.get_by_video_id(video_id):
+        logging.info(f"Report already exists for video ID {video_id}, skipping processing.")
+        return redirect(url_for('emotion_api.result_existing', video_id=video_id))
+
     try:
         result = process_emotion_use_case.execute(video_id)
         if result is None:
@@ -55,6 +66,20 @@ def result(video_filename, video_id):
     report_id = rep.id if rep else None
 
     return render_template('result.html', video_filename=video_filename, video_id=video_id, emotion_report_id = report_id)
+
+@emotion_api.route('/result_existing/<int:video_id>')
+def result_existing(video_id):
+    rep = EmotionReportRepository().get_by_video_id(video_id)
+    if not rep:
+        abort(404, description="Emotion report not found.")
+
+    video_filename = os.path.basename(rep.path)
+
+    return render_template('result.html',
+                           video_filename=video_filename,
+                           video_id=video_id,
+                           emotion_report_id=rep.id)
+
 
 @emotion_api.route('/videos/<video_filename>')
 def get_video(video_filename):
